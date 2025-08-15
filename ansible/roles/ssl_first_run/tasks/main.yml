@@ -1,18 +1,26 @@
 ---
-- name: Create a Docker volume for certbot-conf (mounted to /etc/letsencrypt)
-  community.docker.docker_volume:
-    name: certbot-conf
+#- name: Create a Docker volume for certbot-conf (mounted to /etc/ssl)
+#  community.docker.docker_volume:
+#    name: certbot-conf
 
-- name: Create a Docker volume for certbot-www (mounted to /var/www/certbot)
-  community.docker.docker_volume:
-    name: certbot-www
+#- name: Create Docker volume for public ssl certs
+#  community.docker.docker_volume:
+#    name: ssl_public
 
-- name: Build/pull certbot image
-  community.docker.docker_image:
-    name: certbot/certbot:latest
-    source: pull
-    state: present
-    force_source: true
+#- name: Create Docker volume for private ssl key
+#  community.docker.docker_volume:
+#    name: ssl_private
+
+#- name: Create a Docker volume for certbot-www (mounted to /var/www/certbot)
+#  community.docker.docker_volume:
+#    name: certbot-www
+
+#- name: Build/pull certbot image
+#  community.docker.docker_image:
+#    name: certbot/certbot:latest
+#    source: pull
+#    state: present
+#    force_source: true
 
 - name: Synchronize nginx files to remote
   ansible.posix.synchronize:
@@ -25,11 +33,48 @@
     path: "{{ ansible_user_home_dir }}/nginx/rendered"
     mode: "0744"
 
-- name: Render templated certbot config
-  ansible.builtin.template:
-    src: certbot-docker.sh.j2
-    dest: "{{ ansible_user_home_dir }}/nginx/rendered/certbot-docker.sh"
-    mode: "0744"
+#- name: Render templated certbot config
+#  ansible.builtin.template:
+#    src: certbot-docker.sh.j2
+#    dest: "{{ ansible_user_home_dir }}/nginx/rendered/certbot-docker.sh"
+#    mode: "0744"
+
+- name: Copy static SSL certificates to remote
+  become: true
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/vaults/ssl/datalab_cert.pem"
+    dest: "/etc/ssl/certs/datalab_cert.pem"
+    mode: "0600"
+    owner: root
+    group: root
+
+- name: Copy SSL private key to remote
+  become: true
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/vaults/ssl/datalab_privkey.pem"
+    dest: "/etc/ssl/private/datalab_privkey.pem"
+    mode: "0600"
+    owner: root
+    group: root
+
+#- name: Create temporary ssl docker container for uploading keys
+#  become: true
+#  community.docker.docker_container:
+#    name: datalab_ssl
+#    image: busybox
+#    network_mode: host
+#    volumes:
+#      - ssl_public:/etc/ssl/certs
+#      - ssl_private:/etc/ssl/private
+#    restart_policy: false
+
+#- name: Update public ssl certs in Docker volume
+#  become: true
+#  command: docker cp /etc/ssl/certs/datalab_cert.pem datalab_ssl:/etc/ssl/certs/datalab_cert.pem
+
+#- name: Update private ssl certs in Docker volume
+#  become: true
+#  command: docker cp /etc/ssl/private/datalab_privkey.pem datalab_ssl:/etc/ssl/private/datalab_privkey.pem
 
 - name: Build nginx image
   community.docker.docker_image:
@@ -46,29 +91,29 @@
     image: datalab-nginx
     network_mode: host
     volumes:
-      - certbot-conf:/etc/letsencrypt
-      - certbot-www:/var/www/certbot
+      - /etc/ssl/certs:/etc/ssl/certs
+      - /etc/ssl/private:/etc/ssl/private
     restart_policy: false
 
-- name: Launch certbot container
-  community.docker.docker_container:
-    name: datalab-certbot
-    image: certbot/certbot:latest
-    network_mode: host
-    volumes:
-      - certbot-conf:/etc/letsencrypt
-      - certbot-www:/var/www/certbot
-      - "{{ ansible_user_home_dir }}/nginx/rendered/certbot-docker.sh:/opt/certbot-docker.sh"
-    restart_policy: false
-    detach: true
-    entrypoint:
-      - /opt/certbot-docker.sh
+#- name: Launch certbot container
+#  community.docker.docker_container:
+#    name: datalab-certbot
+#    image: certbot/certbot:latest
+#    network_mode: host
+#    volumes:
+#      - certbot-conf:/etc/letsencrypt
+#      - certbot-www:/var/www/certbot
+#      - "{{ ansible_user_home_dir }}/nginx/rendered/certbot-docker.sh:/opt/certbot-docker.sh"
+#    restart_policy: false
+#    detach: true
+#    entrypoint:
+#     - /opt/certbot-docker.sh
 
-- name: Scheduled SSL renewal with certbot
-  ansible.builtin.cron:
-    name: SSL renewal with certbot
-    minute: "38"
-    hour: "10"
-    weekday: "2"
-    month: "*"
-    job: docker run --rm -v certbot-www:/var/www/certbot -v certbot-conf:/etc/letsencrypt certbot/certbot:latest renew && docker exec datalab-nginx nginx -s reload  # noqa: line-length
+#- name: Scheduled SSL renewal with certbot
+#  ansible.builtin.cron:
+#    name: SSL renewal with certbot
+#    minute: "38"
+#    hour: "10"
+#    weekday: "2"
+#    month: "*"
+#    job: docker run --rm -v certbot-www:/var/www/certbot -v certbot-conf:/etc/letsencrypt certbot/certbot:latest renew && docker exec datalab-nginx nginx -s reload  # noqa: line-length
