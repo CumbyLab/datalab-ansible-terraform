@@ -130,7 +130,7 @@
     hour: "4"
     day: "*"
     month: "*"
-    job: cd {{ ansible_user_home_dir }}/datalab; docker compose exec api /opt/.venv/bin/python -m invoke admin.create-backup --strategy-name daily-snapshots; rsync -a /data/backups/ {{ backup_location }}
+    job: cd {{ ansible_user_home_dir }}/datalab; docker compose exec api /opt/.venv/bin/python -m invoke admin.create-backup --strategy-name daily-snapshots; rsync -a --delete /data/backups/ {{ backup_location }}
 
 - name: Add weekly backup task to crontab
   become: true
@@ -140,7 +140,7 @@
     hour: "5"
     weekday: "7"
     month: "*"
-    job: cd {{ ansible_user_home_dir }}/datalab; docker compose exec api /opt/.venv/bin/python -m invoke admin.create-backup --strategy-name weekly-snapshots; rsync -a /data/backups/ {{ backup_location }}
+    job: cd {{ ansible_user_home_dir }}/datalab; docker compose exec api /opt/.venv/bin/python -m invoke admin.create-backup --strategy-name weekly-snapshots; rsync -a --delete /data/backups/ {{ backup_location }}
 
 - name: Add quarterly backup task to crontab
   become: true
@@ -150,4 +150,4 @@
     hour: "2"
     day: "1"
     month: 1,4,7,10
-    job: cd {{ ansible_user_home_dir }}/datalab; docker compose exec api /opt/.venv/bin/python -m invoke admin.create-backup --strategy-name quarterly-snapshots; rsync -a /data/backups/ {{ backup_location }}
+    job: cd {{ ansible_user_home_dir }}/datalab; docker compose exec api /opt/.venv/bin/python -m invoke admin.create-backup --strategy-name quarterly-snapshots; rsync -a --delete /data/backups/ {{ backup_location }}
