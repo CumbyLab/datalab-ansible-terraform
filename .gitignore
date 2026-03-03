@@ -1,1 +1,4 @@
 .venv/
+ansible/vaults/ssl/nginx*.crt
+ansible/vaults/ssl/nginx*.key
+ansible/vaults/ssl/sce-chem*.pem
