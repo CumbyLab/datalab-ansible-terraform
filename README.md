@@ -135,14 +135,15 @@ These files contain the desired *datalab* settings:
    file (e.g., keys to external integration with GitHub, ORCID).
 3. `./vaults/datalab/.env`: any variables required by the web app.
 4. `./vaults/datalab/.ssh` (OPTIONAL): any SSH keys and config required to be mounted into the server container. These files should each be individually encrypted.
-5. `./vaults/borg/.ssh` (OPTIONAL): any SSH keys or known hosts required to configure the borg backup system. These files should be individually encrypted.
+5. `./vaults/datalab_scraper/config.yaml`: the *datalab_scraper* YAML config for the scraper container.
+6. `./vaults/borg/.ssh` (OPTIONAL): any SSH keys or known hosts required to configure the borg backup system. These files should be individually encrypted.
 
 It is recommended that you version control these files **with encryption** and commit it to your
 fork.
 To encrypt them, you can run
 
 ```shell
-ansible-vault encrypt inventory.yml vaults/datalab/prod_config.json vaults/datalab/.env vaults/datalab/.env_server vaults/datalab/.ssh/* vaults/borg/.ssh/*
+ansible-vault encrypt inventory.yml vaults/datalab/prod_config.json vaults/datalab/.env vaults/datalab/.env_server vaults/datalab/.ssh/* vaults/datalab_scraper/config.yaml vaults/borg/.ssh/*
 ```
 
 and provide a password when prompted (which will then need to be kept safe and
@@ -169,7 +170,8 @@ If you are using your own domain, you will need to update your DNS settings so t
 #### Keeping things up to date
 
 To update the *datalab* version, you simply update the git submodule in
-`src/datalab` and rerun the playbook. This can be pinned to your fork and accomodate any custom changes
+`src/datalab` and rerun the playbook. For scraper updates, do the same for
+`src/datalab_scraper`. This can be pinned to your fork and accomodate any custom changes
 you desire (though you may also need to test and maintain your own set of
 ansible rules and configuration for this).
 

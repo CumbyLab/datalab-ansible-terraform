@@ -23,6 +23,9 @@
     - role: datalab
       name: Build and launch datalab services
       tags: [setup, deploy]
+    - role: datalab_scraper
+      name: Build and launch datalab scraper service
+      tags: [setup, deploy, datalab_scraper]
     - role: nginx
       name: Launch nginx container with autorenewing certbot
       tags: [setup, maintenance, ssl]

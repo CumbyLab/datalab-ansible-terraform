@@ -1,0 +1,35 @@
+---
+- name: Sync local datalab_scraper submodule with remote
+  ansible.posix.synchronize:
+    src: "{{ playbook_dir }}/../src/datalab_scraper"
+    dest: "{{ ansible_user_home_dir }}"
+    recursive: true
+    delete: false
+
+- name: Copy encrypted scraper config file from vault
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/vaults/datalab_scraper/config.yaml"
+    dest: "{{ datalab_scraper_host_config_path }}"
+    mode: "0644"
+
+- name: Build datalab scraper image
+  community.docker.docker_image:
+    name: "{{ datalab_scraper_image_name }}"
+    source: build
+    state: present
+    force_source: true
+    build:
+      path: "{{ ansible_user_home_dir }}/datalab_scraper"
+
+- name: Launch datalab scraper container
+  community.docker.docker_container:
+    name: "{{ datalab_scraper_container_name }}"
+    image: "{{ datalab_scraper_image_name }}"
+    network_mode: host
+    restart_policy: always
+    recreate: true
+    env:
+      CONFIG_YAML: "{{ datalab_scraper_container_config_path }}"
+    volumes:
+      - "{{ datalab_scraper_host_config_path }}:{{ datalab_scraper_container_config_path }}:ro"
+      - /data:/data
