@@ -33,3 +33,4 @@
     volumes:
       - "{{ datalab_scraper_host_config_path }}:{{ datalab_scraper_container_config_path }}:ro"
       - /data:/data
+      - /data_sources:/mounted_data_sources:ro
